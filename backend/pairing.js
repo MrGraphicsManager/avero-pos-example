@@ -14,12 +14,12 @@ async function init(){
 }
 function normalize(code){return String(code||"").trim().toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,32)}
 function createPairingCode(){return crypto.randomBytes(3).toString("hex").toUpperCase().slice(0,6)}
-function createPairing(){const code=createPairingCode();pending.set(code,{createdAt:Date.now()});return code}
+function createPairing(){const code=createPairingCode(),ownerToken=crypto.randomBytes(32).toString("hex");pending.set(code,{createdAt:Date.now(),ownerToken});return {code,ownerToken}}
 async function pair(code,device){
  const key=normalize(code),request=pending.get(key);
  if(!request||Date.now()-request.createdAt>10*60*1000)return null;
  pending.delete(key);
- const record={deviceId:device||"display-"+crypto.randomUUID(),pairedAt:Date.now(),token:crypto.randomBytes(32).toString("hex")};
+ const record={deviceId:device||"display-"+crypto.randomUUID(),pairedAt:Date.now(),token:crypto.randomBytes(32).toString("hex"),ownerToken:request.ownerToken};
  if(collection)await collection.updateOne({deviceId:record.deviceId},{$set:record},{upsert:true});
  memoryPaired.set(record.deviceId,record);
  return record;
@@ -29,7 +29,7 @@ async function getDevice(deviceId){
  if(collection){const record=await collection.findOne({deviceId});if(record){memoryPaired.set(deviceId,record);return record}}
  return null;
 }
-async function authorize(deviceId,token){const record=await getDevice(deviceId);return !!record&&crypto.timingSafeEqual(Buffer.from(String(record.token)),Buffer.from(String(token||"")));}
+async function authorize(deviceId,token){const record=await getDevice(deviceId);if(!record||!token)return false;const a=Buffer.from(String(token)),b=Buffer.from(String(record.token)),c=Buffer.from(String(record.ownerToken||""));return (a.length===b.length&&crypto.timingSafeEqual(a,b))||(a.length===c.length&&crypto.timingSafeEqual(a,c));}
 
 init().catch(err=>console.error("MongoDB init failed:",err.message));
 setInterval(()=>{const now=Date.now();for(const [code,v] of pending)if(now-v.createdAt>10*60*1000)pending.delete(code)},60*1000).unref();
