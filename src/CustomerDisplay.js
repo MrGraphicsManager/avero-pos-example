@@ -1,14 +1,20 @@
 import React,{useEffect,useState} from "react";
-import {Check,WifiOff} from "lucide-react";
-import {getDevice,subscribePOSState,setSyncUrl} from "./deviceSync";
+import {Check,MonitorSmartphone,WifiOff} from "lucide-react";
+import {getDevice,subscribePOSState,setSyncUrl,getSyncUrl} from "./deviceSync";
+
 const initial={screen:"order",displayOn:true,orderNo:"1048",items:[],subtotal:0,tax:0,total:0};
+function api(path,body){return fetch(getSyncUrl()+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(r=>r.json())}
+
 export default function CustomerDisplay(){
  const [state,setState]=useState(()=>{try{return JSON.parse(localStorage.getItem("avero_pos_state"))||initial}catch{return initial}});
- const [connected,setConnected]=useState(false);const device=getDevice();
- useEffect(()=>{const stop=subscribePOSState(next=>{setState(next);setConnected(true)});return stop},[]);
+ const [connected,setConnected]=useState(false),[device,setDevice]=useState(getDevice),[setup,setSetup]=useState(()=>!getSyncUrl()),[server,setServer]=useState(getSyncUrl()),[code,setCode]=useState(""),[error,setError]=useState("");
+ useEffect(()=>{if(setup)return;const stop=subscribePOSState(next=>{setState(next);setConnected(true)});return stop},[setup]);
+ const connect=async()=>{setError("");const base=server.trim().replace(/\/$/,"");if(!base){setError("Enter the sync server URL.");return}try{setSyncUrl(base);const health=await fetch(base+"/health").then(r=>r.json());if(!health.ok)throw new Error("Server unavailable");const result=await api("/pairing/claim",{code,deviceId:device.id});if(!result.ok)throw new Error(result.error||"Pairing failed");localStorage.setItem("avero_device_id",JSON.stringify({...device,id:result.deviceId,status:"online"}));setDevice({...device,id:result.deviceId,status:"online"});setSetup(false)}catch(e){setError(e.message||"Unable to connect")}};
+ if(setup)return <Setup server={server} setServer={setServer} code={code} setCode={setCode} connect={connect} error={error}/>;
  if(!state.displayOn)return <div className="kiosk dark"><div className="kiosk-off"><WifiOff/><h1>Display Offline</h1><p>Waiting for the merchant terminal.</p></div></div>;
  return <div className="kiosk">{state.screen==="payment"?<Payment state={state}/>:state.screen==="success"?<Success state={state}/>:<Order state={state}/>}<div className={"connection "+(connected?"online":"offline")}><i/>{connected?"Connected":"Waiting for POS"}</div></div>;
 }
+function Setup({server,setServer,code,setCode,connect,error}){return <div className="kiosk setup"><div className="setupCard"><div className="setupLogo"><b>A</b> AVERO</div><MonitorSmartphone/><small>CUSTOMER DISPLAY SETUP</small><h1>Connect this display</h1><p>Enter the sync server and the pairing code provided by the merchant terminal.</p><label>Sync server</label><input value={server} onChange={e=>setServer(e.target.value)} placeholder="https://your-server.example.com"/><label>Pairing code</label><input value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="ABC123" maxLength={32}/>{error&&<div className="setupError">{error}</div>}<button onClick={connect}>Connect Display</button><span>HP ElitePOS 10.1&quot; • 1280 × 800 • 16:10</span></div></div>}
 function Order({state}){return <div className="kiosk-order"><header><b>A</b><strong>AVERO</strong><span>TABLE 04</span></header><main><small>YOUR ORDER</small>{state.items.length?state.items.map(i=><div className="krow" key={i.id}><span>{i.name} × {i.qty}</span><b>₹{i.price*i.qty}</b></div>):<div className="kwait">Your order will appear here.</div>}<div className="ksummary"><div><span>Subtotal</span><b>₹{state.subtotal}</b></div><div><span>GST</span><b>₹{state.tax}</b></div><div className="ktotal"><span>Total</span><b>₹{state.total}</b></div></div><div className="knotice">Please wait for payment</div></main><footer>Thank you for choosing us.</footer></div>}
 function Payment({state}){return <div className="kpayment"><div className="kbrand">A AVERO</div><small>PAYMENT DUE</small><strong>₹{state.total}</strong><div className="kqr">{Array.from({length:81}).map((_,i)=><i className={(i%4===0||i%9===0||i%13===0)?"dark":""} key={i}/>)}</div><h2>Scan to pay</h2><p>UPI • ORDER #{state.orderNo}</p></div>}
 function Success({state}){return <div className="ksuccess"><div className="check"><Check/></div><div className="kbrand">A AVERO</div><h1>Payment successful</h1><strong>₹{state.total}</strong><p>Thank you. Your order is confirmed.</p></div>}
