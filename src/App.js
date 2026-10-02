@@ -14,7 +14,7 @@ const [items,setItems]=useState([{...MENU[1],qty:1},{...MENU[3],qty:1}]);
 const [screen,setScreen]=useState("order");
 const [displayOn,setDisplayOn]=useState(true);
 const [category,setCategory]=useState("All");
-const [orderNo,setOrderNo]=useState("1048");
+const [orderNo,setOrderNo]=useState(()=>localStorage.getItem("avero_order_no")||"1048");
 const subtotal=useMemo(()=>items.reduce((s,i)=>s+i.price*i.qty,0),[items]);
 const tax=Math.round(subtotal*.05), total=subtotal+tax;
 const cats=["All",...new Set(MENU.map(x=>x.category))];
@@ -22,7 +22,7 @@ const filtered=category==="All"?MENU:MENU.filter(x=>x.category===category);
 const add=p=>setItems(cur=>{const f=cur.find(x=>x.id===p.id);return f?cur.map(x=>x.id===p.id?{...x,qty:x.qty+1}:x):[...cur,{...p,qty:1}]});
 const qty=(id,d)=>setItems(cur=>cur.map(x=>x.id===id?{...x,qty:x.qty+d}:x).filter(x=>x.qty>0));
 const pay=()=>{setScreen("payment");setDisplayOn(true)};
-const paid=()=>{setScreen("success");setOrderNo(String(Number(orderNo)+1));};
+const paid=()=>{setScreen("success");const next=String(Number(orderNo)+1);setOrderNo(next);localStorage.setItem("avero_order_no",next);};
 const reset=()=>{setItems([]);setScreen("order")};
 return <div className="shell">
 <header><div className="brand"><b> A </b>AVERO <small>POS EXAMPLE</small></div><div className="tools"><span><Wifi size={14}/> Connected</span><Bell size={17}/><i>M</i></div></header>
