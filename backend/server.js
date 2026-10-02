@@ -11,7 +11,7 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==="OPTIONS"){res.writeHead(204,{"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type,Authorization"});return res.end()}
  const url=new URL(req.url,"http://localhost:"+PORT);
  if(url.pathname==="/health")return send(res,200,{ok:true,service:"avero-device-sync"});
- if(url.pathname==="/pairing/create"&&req.method==="POST")return send(res,200,{ok:true,code:createPairing()});
+ if(url.pathname==="/pairing/create"&&req.method==="POST")return send(res,200,{ok:true,...createPairing()});
  if(url.pathname==="/pairing/claim"&&req.method==="POST")return readBody(req,async body=>{if(!body)return send(res,400,{error:"invalid json"});try{const record=await pair(body.code,body.deviceId);return record?send(res,200,{ok:true,deviceId:record.deviceId,token:record.token,pairedAt:record.pairedAt}):send(res,404,{error:"invalid or expired pairing code"})}catch(e){send(res,500,{error:"pairing service unavailable"})}});
  if(url.pathname==="/device/stream"&&req.method==="GET"){
    const deviceId=url.searchParams.get("device")||"hp-elitepos-10-1",token=url.searchParams.get("token")||"";
