@@ -1,54 +1,41 @@
-import React, {useMemo, useState} from "react";
-import {BarChart3, Bell, Check, Coffee, CreditCard, LayoutDashboard, MonitorSmartphone, Plus, Receipt, Settings2, ShoppingBag, Table2, Trash2, UtensilsCrossed, Wifi} from "lucide-react";
+import React,{useMemo,useState} from "react";
+import {BarChart3,Bell,Check,Coffee,CreditCard,LayoutDashboard,MonitorSmartphone,Plus,Receipt,Settings2,ShoppingBag,Table2,Trash2,UtensilsCrossed,Wifi,ArrowLeft} from "lucide-react";
 
 const MENU=[
-{id:"espresso",name:"Espresso",price:120,category:"Coffee"},
-{id:"cappuccino",name:"Cappuccino",price:180,category:"Coffee"},
-{id:"latte",name:"Cafe Latte",price:210,category:"Coffee"},
-{id:"sandwich",name:"Veg Sandwich",price:220,category:"Food"},
-{id:"fries",name:"French Fries",price:140,category:"Sides"},
-{id:"brownie",name:"Chocolate Brownie",price:160,category:"Dessert"}];
+{id:"espresso",name:"Espresso",price:120,category:"Coffee"},{id:"cappuccino",name:"Cappuccino",price:180,category:"Coffee"},{id:"latte",name:"Cafe Latte",price:210,category:"Coffee"},{id:"sandwich",name:"Veg Sandwich",price:220,category:"Food"},{id:"fries",name:"French Fries",price:140,category:"Sides"},{id:"brownie",name:"Chocolate Brownie",price:160,category:"Dessert"}];
+const NAV=[["overview",LayoutDashboard,"Overview"],["orders",ShoppingBag,"Orders"],["tables",Table2,"Tables"],["billing",Receipt,"Billing"],["reports",BarChart3,"Reports"],["display",MonitorSmartphone,"Customer Display"]];
 
 function App(){
-const [items,setItems]=useState([{...MENU[1],qty:1},{...MENU[3],qty:1}]);
-const [screen,setScreen]=useState("order");
-const [displayOn,setDisplayOn]=useState(true);
-const [category,setCategory]=useState("All");
-const [orderNo,setOrderNo]=useState(()=>localStorage.getItem("avero_order_no")||"1048");
-const subtotal=useMemo(()=>items.reduce((s,i)=>s+i.price*i.qty,0),[items]);
-const tax=Math.round(subtotal*.05), total=subtotal+tax;
-const cats=["All",...new Set(MENU.map(x=>x.category))];
-const filtered=category==="All"?MENU:MENU.filter(x=>x.category===category);
-const add=p=>setItems(cur=>{const f=cur.find(x=>x.id===p.id);return f?cur.map(x=>x.id===p.id?{...x,qty:x.qty+1}:x):[...cur,{...p,qty:1}]});
-const qty=(id,d)=>setItems(cur=>cur.map(x=>x.id===id?{...x,qty:x.qty+d}:x).filter(x=>x.qty>0));
-const pay=()=>{setScreen("payment");setDisplayOn(true)};
-const paid=()=>{setScreen("success");const next=String(Number(orderNo)+1);setOrderNo(next);localStorage.setItem("avero_order_no",next);};
-const reset=()=>{setItems([]);setScreen("order")};
-return <div className="shell">
-<header><div className="brand"><b> A </b>AVERO <small>POS EXAMPLE</small></div><div className="tools"><span><Wifi size={14}/> Connected</span><Bell size={17}/><i>M</i></div></header>
-<div className="layout"><aside>
-<div className="label">MERCHANT</div>
-<div className="nav active"><LayoutDashboard/>Overview</div><div className="nav"><ShoppingBag/>Orders</div><div className="nav"><Table2/>Tables</div><div className="nav"><Receipt/>Billing</div><div className="nav"><BarChart3/>Reports</div>
-<div className="label device">DEVICES</div><div className="nav"><MonitorSmartphone/>Customer Display <em/></div>
-<div className="nav bottom"><Settings2/>Settings</div>
-</aside>
-<main><div className="head"><div><small>CAFE • COUNTER 01</small><h1>New Order</h1><p>Create an order and see the customer display update.</p></div><button className="display-toggle" onClick={()=>setDisplayOn(x=>!x)}><MonitorSmartphone/> {displayOn?"Display On":"Display Off"}</button></div>
-<div className="grid">
-<section className="card menu"><div className="panelhead"><div><h2>Menu</h2><p>Tap an item to add it.</p></div><div className="tabs">{cats.map(c=><button className={category===c?"sel":""} onClick={()=>setCategory(c)} key={c}>{c}</button>)}</div></div>
-<div className="menugrid">{filtered.map(p=><button className="product" onClick={()=>add(p)} key={p.id}><span>{p.category==="Coffee"?<Coffee/>:<UtensilsCrossed/>}</span><strong>{p.name}</strong><small>₹{p.price}</small><b><Plus size={13}/></b></button>)}</div></section>
-<section className="card order"><div className="panelhead"><div><h2>Current Order</h2><p>Table 04 • Dine-in</p></div><label>ORDER #{orderNo}</label></div>
-<div className="rows">{items.length?items.map(i=><div className="row" key={i.id}><div><strong>{i.name}</strong><small>₹{i.price} each</small></div><div className="qty"><button onClick={()=>qty(i.id,-1)}><Trash2 size={13}/></button><span>{i.qty}</span><button onClick={()=>qty(i.id,1)}><Plus size={13}/></button></div><b>₹{i.price*i.qty}</b></div>):<div className="empty">Add items from the menu.</div>}</div>
-<div className="summary"><div><span>Subtotal</span><b>₹{subtotal}</b></div><div><span>GST (5%)</span><b>₹{tax}</b></div><div className="total"><span>Total</span><b>₹{total}</b></div></div>
-<div className="actions"><button onClick={()=>setDisplayOn(true)} disabled={!items.length}><MonitorSmartphone/> Update Display</button><button className="primary" onClick={pay} disabled={!items.length}><CreditCard/> Take Payment</button></div>
-</section></div>
-<section className="live"><div className="livehead"><div><small>LIVE DEVICE PREVIEW</small><h2>Customer display</h2><p>Live view of the connected customer-facing hardware.</p></div><span><i/> HP ElitePOS 10.1&quot; • Online</span></div>
-<div className="device">{displayOn?<Display screen={screen} items={items} subtotal={subtotal} tax={tax} total={total} orderNo={orderNo} onPay={paid} onReset={reset}/>:<div className="off"><MonitorSmartphone/><h3>Customer display is off</h3><button className="primary" onClick={()=>setDisplayOn(true)}>Turn Display On</button></div>}</div></section>
-</main></div></div>
+ const [view,setView]=useState("overview"),[items,setItems]=useState([{...MENU[1],qty:1},{...MENU[3],qty:1}]),[category,setCategory]=useState("All"),[displayOn,setDisplayOn]=useState(true),[screen,setScreen]=useState("order");
+ const [orderNo,setOrderNo]=useState(()=>localStorage.getItem("avero_order_no")||"1048");
+ const [orders,setOrders]=useState(()=>JSON.parse(localStorage.getItem("avero_orders")||"[]"));
+ const subtotal=useMemo(()=>items.reduce((s,i)=>s+i.price*i.qty,0),[items]),tax=Math.round(subtotal*.05),total=subtotal+tax;
+ const cats=["All",...new Set(MENU.map(x=>x.category))],filtered=category==="All"?MENU:MENU.filter(x=>x.category===category);
+ const add=p=>setItems(cur=>{let f=cur.find(x=>x.id===p.id);return f?cur.map(x=>x.id===p.id?{...x,qty:x.qty+1}:x):[...cur,{...p,qty:1}]});
+ const qty=(id,d)=>setItems(cur=>cur.map(x=>x.id===id?{...x,qty:x.qty+d}:x).filter(x=>x.qty>0));
+ const complete=()=>{if(!items.length)return;const o={id:orderNo,total,status:"Paid",items:items.map(({id,name,qty})=>({id,name,qty}))};const next=[o,...orders];setOrders(next);localStorage.setItem("avero_orders",JSON.stringify(next));const n=String(Number(orderNo)+1);setOrderNo(n);localStorage.setItem("avero_order_no",n);setScreen("success")};
+ const newOrder=()=>{setItems([]);setScreen("order");setView("overview")};
+ return <div className="shell"><header><div className="brand"><b>A</b>AVERO <small>POS EXAMPLE</small></div><div className="tools"><span><Wifi size={14}/> Connected</span><Bell size={17}/><i>M</i></div></header>
+ <div className="layout"><aside><div className="label">MERCHANT</div>{NAV.map(([id,I,label])=><button key={id} className={"nav "+(view===id?"active":"")} onClick={()=>setView(id)}><I/>{label}{id==="display"&&<em/>}</button>)}<div className="label device">SYSTEM</div><button className={"nav "+(view==="settings"?"active":"")} onClick={()=>setView("settings")}><Settings2/>Settings</button></aside>
+ <main>{view==="overview"&&<><div className="head"><div><small>CAFE • COUNTER 01</small><h1>New Order</h1><p>Create an order and see the customer display update.</p></div><button className="display-toggle" onClick={()=>setDisplayOn(x=>!x)}><MonitorSmartphone/> {displayOn?"Display On":"Display Off"}</button></div><div className="grid"><MenuPanel cats={cats} category={category} setCategory={setCategory} filtered={filtered} add={add}/><OrderPanel items={items} qty={qty} subtotal={subtotal} tax={tax} total={total} orderNo={orderNo} onDisplay={()=>setDisplayOn(true)} onPay={()=>setScreen("payment")}/></div><LiveDisplay displayOn={displayOn} setDisplayOn={setDisplayOn} screen={screen} items={items} subtotal={subtotal} tax={tax} total={total} orderNo={orderNo} onPay={complete} onReset={newOrder}/></>}
+ {view==="orders"&&<Orders orders={orders}/>}
+ {view==="tables"&&<Tables/>}
+ {view==="billing"&&<Billing orders={orders}/>}
+ {view==="reports"&&<Reports orders={orders}/>}
+ {view==="display"&&<DisplayManager displayOn={displayOn} setDisplayOn={setDisplayOn}/>}
+ {view==="settings"&&<Settings/>}</main></div></div>
 }
 
-function Display({screen,items,subtotal,tax,total,orderNo,onPay,onReset}){
-if(screen==="payment") return <div className="customer payment"><div className="customerbrand">A AVERO</div><div className="paymentbody"><small>PAYMENT DUE</small><strong>₹{total}</strong><div className="fakeqr">{Array.from({length:49}).map((_,i)=><i className={(i%3===0||i%7===0)?"dark":""} key={i}/>)}</div><h3>Scan to pay</h3><p>UPI • TABLE 04 • ORDER #{orderNo}</p><button className="paynow" onClick={onPay}>Simulate Payment</button></div></div>;
-if(screen==="success") return <div className="customer success"><div className="successmark"><Check/></div><div className="customerbrand">A AVERO</div><h2>Payment successful</h2><strong>₹{total}</strong><p>Order #{orderNo} confirmed.</p><button className="paynow light" onClick={onReset}>New Order</button></div>;
-return <div className="customer orderdisplay"><div className="customerhead"><div className="customerbrand">A AVERO</div><span>TABLE 04</span></div><div className="ordercontent"><small>YOUR ORDER</small>{items.length?items.map(i=><div className="drow" key={i.id}><span>{i.name} × {i.qty}</span><b>₹{i.price*i.qty}</b></div>):<div className="waiting">Waiting for order…</div>}<div className="dsummary"><div><span>Subtotal</span><b>₹{subtotal}</b></div><div><span>GST</span><b>₹{tax}</b></div><div className="dtotal"><span>Total</span><b>₹{total}</b></div></div><div className="waitingbtn">Waiting for cashier</div></div><footer>Thank you for choosing us.</footer></div>;
-}
+function MenuPanel({cats,category,setCategory,filtered,add}){return <section className="card menu"><div className="panelhead"><div><h2>Menu</h2><p>Tap an item to add it.</p></div><div className="tabs">{cats.map(c=><button className={category===c?"sel":""} onClick={()=>setCategory(c)} key={c}>{c}</button>)}</div></div><div className="menugrid">{filtered.map(p=><button className="product" onClick={()=>add(p)} key={p.id}><span>{p.category==="Coffee"?<Coffee/>:<UtensilsCrossed/>}</span><strong>{p.name}</strong><small>₹{p.price}</small><b><Plus size={13}/></b></button>)}</div></section>}
+function OrderPanel({items,qty,subtotal,tax,total,orderNo,onDisplay,onPay}){return <section className="card order"><div className="panelhead"><div><h2>Current Order</h2><p>Table 04 • Dine-in</p></div><label>ORDER #{orderNo}</label></div><div className="rows">{items.length?items.map(i=><div className="row" key={i.id}><div><strong>{i.name}</strong><small>₹{i.price} each</small></div><div className="qty"><button onClick={()=>qty(i.id,-1)}><Trash2 size={13}/></button><span>{i.qty}</span><button onClick={()=>qty(i.id,1)}><Plus size={13}/></button></div><b>₹{i.price*i.qty}</b></div>):<div className="empty">Add items from the menu.</div>}</div><div className="summary"><div><span>Subtotal</span><b>₹{subtotal}</b></div><div><span>GST (5%)</span><b>₹{tax}</b></div><div className="total"><span>Total</span><b>₹{total}</b></div></div><div className="actions"><button onClick={onDisplay} disabled={!items.length}><MonitorSmartphone/>Update Display</button><button className="primary" onClick={onPay} disabled={!items.length}><CreditCard/>Take Payment</button></div></section>}
+function LiveDisplay({displayOn,setDisplayOn,screen,items,subtotal,tax,total,orderNo,onPay,onReset}){return <section className="live"><div className="livehead"><div><small>LIVE DEVICE PREVIEW</small><h2>Customer display</h2><p>Connected customer-facing hardware.</p></div><span><i/> HP ElitePOS 10.1&quot; • Online</span></div><div className="device">{displayOn?<Display screen={screen} items={items} subtotal={subtotal} tax={tax} total={total} orderNo={orderNo} onPay={onPay} onReset={onReset}/>:<div className="off"><MonitorSmartphone/><h3>Customer display is off</h3><button className="primary" onClick={()=>setDisplayOn(true)}>Turn Display On</button></div>}</div></section>}
+function Display({screen,items,subtotal,tax,total,orderNo,onPay,onReset}){if(screen==="payment")return <div className="customer payment"><div className="customerbrand">A AVERO</div><div className="paymentbody"><small>PAYMENT DUE</small><strong>₹{total}</strong><div className="fakeqr">{Array.from({length:49}).map((_,i)=><i className={i%3===0||i%7===0?"dark":""} key={i}/>)}</div><h3>Scan to pay</h3><p>UPI • TABLE 04 • ORDER #{orderNo}</p><button className="paynow" onClick={onPay}>Simulate Payment</button></div></div>;if(screen==="success")return <div className="customer success"><div className="successmark"><Check/></div><div className="customerbrand">A AVERO</div><h2>Payment successful</h2><strong>₹{total}</strong><p>Order #{orderNo} confirmed.</p><button className="paynow light" onClick={onReset}>New Order</button></div>;return <div className="customer orderdisplay"><div className="customerhead"><div className="customerbrand">A AVERO</div><span>TABLE 04</span></div><div className="ordercontent"><small>YOUR ORDER</small>{items.length?items.map(i=><div className="drow" key={i.id}><span>{i.name} × {i.qty}</span><b>₹{i.price*i.qty}</b></div>):<div className="waiting">Waiting for order…</div>}<div className="dsummary"><div><span>Subtotal</span><b>₹{subtotal}</b></div><div><span>GST</span><b>₹{tax}</b></div><div className="dtotal"><span>Total</span><b>₹{total}</b></div></div><div className="waitingbtn">Waiting for cashier</div></div><footer>Thank you for choosing us.</footer></div>}
+
+function Page({title,sub,children}){return <div className="page"><div className="pagehead"><div><small>AVERO POS</small><h1>{title}</h1><p>{sub}</p></div></div>{children}</div>}
+function Orders({orders}){return <Page title="Orders" sub="Recent orders and payment status."><div className="dataCard"><div className="tableHead"><b>Order</b><b>Items</b><b>Total</b><b>Status</b></div>{orders.length?orders.map(o=><div className="tableRow" key={o.id}><strong>#{o.id}</strong><span>{o.items.map(i=>i.name+" × "+i.qty).join(", ")}</span><b>₹{o.total}</b><span className="status">{o.status}</span></div>):<div className="empty">No completed orders yet. Create an order from Overview.</div>}</div></Page>}
+function Tables(){return <Page title="Tables" sub="Live table status for Counter 01."><div className="tableGrid">{["01","02","03","04","05","06","07","08"].map((n,i)=><div className={"tableBox "+(n==="04"?"occupied":"")} key={n}><Table2/><strong>Table {n}</strong><span>{n==="04"?"Occupied":"Available"}</span></div>)}</div></Page>}
+function Billing({orders}){let sales=orders.reduce((s,o)=>s+o.total,0);return <Page title="Billing" sub="Payment activity for this terminal."><div className="stats"><div><small>PAID ORDERS</small><b>{orders.length}</b></div><div><small>TOTAL SALES</small><b>₹{sales}</b></div><div><small>TAX COLLECTED</small><b>₹{Math.round(sales*5/105)}</b></div></div><div className="dataCard"><h2>Payment summary</h2><p>UPI customer-display payments are recorded after successful checkout.</p></div></Page>}
+function Reports({orders}){let sales=orders.reduce((s,o)=>s+o.total,0);return <Page title="Reports" sub="Simple operational snapshot."><div className="stats"><div><small>ORDERS</small><b>{orders.length}</b></div><div><small>REVENUE</small><b>₹{sales}</b></div><div><small>AVERAGE ORDER</small><b>₹{orders.length?Math.round(sales/orders.length):0}</b></div></div><div className="dataCard"><h2>Top menu items</h2><p>Menu performance will appear here as completed order data grows.</p></div></Page>}
+function DisplayManager({displayOn,setDisplayOn}){return <Page title="Customer Display" sub="Manage the connected HP ElitePOS customer-facing screen."><div className="settingsCard"><div><small>DEVICE</small><h2>HP ElitePOS 10.1&quot; Customer Display</h2><p>USB-connected profile • 1280 × 800 • 16:10</p></div><button className="display-toggle" onClick={()=>setDisplayOn(x=>!x)}>{displayOn?"Turn Display Off":"Turn Display On"}</button></div><div className="settingsCard"><div><small>STATUS</small><h2>{displayOn?"Online and active":"Offline / disabled"}</h2><p>Merchant order updates are shown on the customer-facing display.</p></div><span className="status">{displayOn?"Connected":"Disabled"}</span></div></Page>}
+function Settings(){return <Page title="Settings" sub="Terminal and business configuration."><div className="settingsCard"><div><small>BUSINESS</small><h2>AVERO Cafe</h2><p>Counter 01 • India • INR • GST 5%</p></div><button className="display-toggle">Configuration</button></div><div className="settingsCard"><div><small>SOFTWARE</small><h2>Avero POS Example</h2><p>Local data is stored in this browser for this example environment.</p></div></div></Page>}
 export default App;
