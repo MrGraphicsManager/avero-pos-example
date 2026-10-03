@@ -1,6 +1,6 @@
 # Avero POS Example
 
-Production-oriented merchant POS and customer-display software for Avero custom hardware solutions.
+Merchant POS and customer-display software for Avero custom hardware solutions.
 
 Target hardware:
 - HP ElitePOS 10.1-inch customer display
@@ -15,7 +15,7 @@ Target hardware:
 - Node.js real-time device-sync backend
 - One-time pairing codes
 - Separate merchant/device authentication tokens
-- MongoDB persistence for paired devices
+- MongoDB persistence for paired devices and latest display state
 - Render deployment configuration
 - GitHub Actions build validation
 
@@ -39,7 +39,7 @@ The root `render.yaml` defines the Node backend service. After deployment, copy 
 4. Customer display opens with `?display=1` and enters the backend URL + code.
 5. The backend returns a device token.
 6. The display stores the token and connects to the authenticated SSE stream.
-7. Merchant POS publishes order/payment state through the authenticated API.
+7. Merchant POS publishes order/payment state through the authenticated API.\n8. The latest state is persisted so a reconnecting display can recover its current screen.\n\n### Authentication\n- The merchant uses an owner token to publish state.\n- Each customer display receives its own device token.\n- Device tokens cannot publish merchant state.
 
 ## Important
 
