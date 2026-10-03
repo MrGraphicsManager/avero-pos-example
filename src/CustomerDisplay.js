@@ -6,8 +6,8 @@ const initial={screen:"order",displayOn:true,orderNo:"1048",items:[],subtotal:0,
 function api(path,body){return fetch(getSyncUrl()+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(r=>r.json())}
 
 export default function CustomerDisplay(){
- const [state,setState]=useState(()=>{try{return JSON.parse(localStorage.getItem("avero_pos_state"))||initial}catch{return initial}});
- const [connected,setConnected]=useState(false),[device,setDevice]=useState(getDevice),[setup,setSetup]=useState(()=>!getSyncUrl()),[server,setServer]=useState(getSyncUrl()),[code,setCode]=useState(""),[error,setError]=useState("");
+ const [state,setState]=useState(initial);
+ const [connected,setConnected]=useState(false),[device,setDevice]=useState(getDevice),[setup,setSetup]=useState(()=>!getSyncUrl()||!localStorage.getItem("avero_sync_token")),[server,setServer]=useState(getSyncUrl()),[code,setCode]=useState(""),[error,setError]=useState("");
  useEffect(()=>{if(setup)return;const stop=subscribePOSState(next=>{setState(next);setConnected(true)});return stop},[setup]);
  const connect=async()=>{setError("");const base=server.trim().replace(/\/$/,"");if(!base){setError("Enter the sync server URL.");return}try{setSyncUrl(base);const health=await fetch(base+"/health").then(r=>r.json());if(!health.ok)throw new Error("Server unavailable");const result=await api("/pairing/claim",{code,deviceId:device.id});if(!result.ok)throw new Error(result.error||"Pairing failed");setSyncToken(result.token);localStorage.setItem("avero_device_id",JSON.stringify({...device,id:result.deviceId,status:"online"}));setDevice({...device,id:result.deviceId,status:"online"});setSetup(false)}catch(e){setError(e.message||"Unable to connect")}};
  if(setup)return <Setup server={server} setServer={setServer} code={code} setCode={setCode} connect={connect} error={error}/>;
