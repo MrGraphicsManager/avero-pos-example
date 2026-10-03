@@ -1,10 +1,13 @@
 const CHANNEL_NAME="avero-pos-device";
 const DEVICE_KEY="avero_device_id";
-const API_KEY="avero_sync_api";\nconst TOKEN_KEY="avero_sync_token";
+const API_KEY="avero_sync_api";
+const TOKEN_KEY="avero_sync_token";
 const defaultDevice={id:"hp-elitepos-10-1",name:'HP ElitePOS 10.1"',resolution:"1280x800",ratio:"16:10",status:"online"};
 
 export function getDevice(){try{return JSON.parse(localStorage.getItem(DEVICE_KEY))||defaultDevice}catch{return defaultDevice}}
-export function getSyncUrl(){return localStorage.getItem(API_KEY)||""}\nexport function getSyncToken(){return localStorage.getItem(TOKEN_KEY)||""}\nexport function setSyncToken(token){if(token)localStorage.setItem(TOKEN_KEY,token);else localStorage.removeItem(TOKEN_KEY)}
+export function getSyncUrl(){return localStorage.getItem(API_KEY)||""}
+export function getSyncToken(){return localStorage.getItem(TOKEN_KEY)||""}
+export function setSyncToken(token){if(token)localStorage.setItem(TOKEN_KEY,token);else localStorage.removeItem(TOKEN_KEY)}
 export function setSyncUrl(url){if(url)localStorage.setItem(API_KEY,url.replace(/\/$/,""));else localStorage.removeItem(API_KEY)}
 export function publishPOSState(state){
  const payload={...state,updatedAt:Date.now()};
