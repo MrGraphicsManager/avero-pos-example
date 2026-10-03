@@ -2,7 +2,9 @@ const crypto=require("crypto");
 const {MongoClient}=require("mongodb");
 const pending=new Map();
 const memoryPaired=new Map();
+const memoryStates=new Map();
 let collection=null;
+let stateCollection=null;
 
 async function init(){
  if(!process.env.MONGO_URL)return;
@@ -10,7 +12,10 @@ async function init(){
  await client.connect();
  const db=client.db(process.env.MONGO_DB||"avero");
  collection=db.collection("paired_devices");
+ stateCollection=db.collection("device_states");
  await collection.createIndex({deviceId:1},{unique:true});
+ await stateCollection.createIndex({deviceId:1},{unique:true});
+ console.log("MongoDB connected");
 }
 function normalize(code){return String(code||"").trim().toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,32)}
 function createPairingCode(){return crypto.randomBytes(3).toString("hex").toUpperCase().slice(0,6)}
@@ -29,8 +34,31 @@ async function getDevice(deviceId){
  if(collection){const record=await collection.findOne({deviceId});if(record){memoryPaired.set(deviceId,record);return record}}
  return null;
 }
-async function authorize(deviceId,token){const record=await getDevice(deviceId);if(!record||!token)return false;const a=Buffer.from(String(token)),b=Buffer.from(String(record.token)),c=Buffer.from(String(record.ownerToken||""));return (a.length===b.length&&crypto.timingSafeEqual(a,b))||(a.length===c.length&&crypto.timingSafeEqual(a,c));}
-
+async function authorizeDevice(deviceId,token){
+ const record=await getDevice(deviceId);
+ if(!record||!token)return false;
+ const a=Buffer.from(String(token)),b=Buffer.from(String(record.token));
+ return a.length===b.length&&crypto.timingSafeEqual(a,b);
+}
+async function authorizeOwner(deviceId,token){
+ const record=await getDevice(deviceId);
+ if(!record||!token)return false;
+ const a=Buffer.from(String(token)),b=Buffer.from(String(record.ownerToken||""));
+ return a.length===b.length&&crypto.timingSafeEqual(a,b);
+}
+async function saveState(deviceId,state){
+ const record={deviceId,state,updatedAt:Date.now()};
+ memoryStates.set(deviceId,record);
+ if(stateCollection)await stateCollection.updateOne({deviceId},{$set:record},{upsert:true});
+}
+async function getState(deviceId){
+ if(memoryStates.has(deviceId))return memoryStates.get(deviceId).state;
+ if(stateCollection){
+   const record=await stateCollection.findOne({deviceId});
+   if(record){memoryStates.set(deviceId,record);return record.state}
+ }
+ return null;
+}
 init().catch(err=>console.error("MongoDB init failed:",err.message));
 setInterval(()=>{const now=Date.now();for(const [code,v] of pending)if(now-v.createdAt>10*60*1000)pending.delete(code)},60*1000).unref();
-module.exports={normalize,createPairing,createPairingCode,pair,getDevice,authorize};
+module.exports={normalize,createPairing,createPairingCode,pair,getDevice,authorizeDevice,authorizeOwner,saveState,getState};
